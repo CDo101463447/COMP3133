@@ -22,6 +22,6 @@ export const appConfig: ApplicationConfig = {
         cache: new InMemoryCache(),
       };
     }),
-    GraphQLModule,  // Make sure GraphQLModule is included in the config
+    GraphQLModule,
   ],
 };

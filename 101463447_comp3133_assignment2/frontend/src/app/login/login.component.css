@@ -1,0 +1,10 @@
+.error {
+    color: red;
+    font-size: 0.9em;
+  }
+  
+  small {
+    display: block;
+    margin-top: 5px;
+  }
+  
