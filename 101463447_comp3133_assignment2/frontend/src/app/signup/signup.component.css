@@ -1,0 +1,98 @@
+/* Centering the entire container */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
+    display: flex;
+    justify-content: center;
+    align-items: center;  /* Changed to center vertically */
+    height: 100vh;
+  }
+  
+  /* Container for the form */
+  form {
+    background: #fff;
+    padding: 2rem 3rem;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    text-align: left;
+    margin-bottom: 50px;
+  }
+  
+  /* Heading */
+  h1 {
+    text-align: left;
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+  
+  /* Form fields */
+  form div {
+    margin-bottom: 2rem;  /* Adjusts space between fields */
+  }
+  
+  /* Labels */
+  label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  /* Input fields */
+  input {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    margin-bottom: 1rem;  /* Space between input fields */
+  }
+  
+  input:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+  
+  /* Error styling */
+  .error-message small {
+    color: red;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+  }
+  
+  /* Button styling */
+  button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 1rem;  /* Adds space above the button */
+  }
+  
+  button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  
+  button:hover:not(:disabled) {
+    background-color: #0056b3;
+  }
+  
+  /* Error alert at bottom */
+  .error-message strong {
+    display: block;
+    color: red;
+    margin-top: 1rem;
+    text-align: center;
+  }
+  

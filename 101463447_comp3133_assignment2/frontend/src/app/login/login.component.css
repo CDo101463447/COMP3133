@@ -1,10 +1,93 @@
-.error {
-    color: red;
-    font-size: 0.9em;
+/* Full-page centering */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
   }
   
-  small {
+  /* Container for the heading and form */
+  .login-form-container {
+    background: #fff;
+    padding: 2rem 3rem;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+  
+  /* Heading style */
+  h1 {
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+  
+  /* Form fields */
+  form {
+    text-align: left;
+  }
+  
+  form div {
+    margin-bottom: 1.2rem;
+  }
+  
+  label {
     display: block;
-    margin-top: 5px;
+    margin-bottom: 0.4rem;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  input {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+  }
+  
+  input:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+  
+  /* Error styling */
+  .error-message small {
+    color: red;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+  }
+  
+  /* Button */
+  button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  
+  button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  button:hover:not(:disabled) {
+    background-color: #0056b3;
+  }
+  
+  /* General error message */
+  .error-message strong {
+    display: block;
+    color: red;
+    margin-top: 1rem;
+    text-align: center;
   }
   

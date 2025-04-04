@@ -22,7 +22,7 @@ export class EmployeeComponent implements OnInit {
   employees: any[] = [];
   errorMessage: string | null = null;
 
-  showAddEmployeeForm = false;
+  showAddEmployeeForm: boolean = false;
   showUpdateEmployeeForm = false; // Flag to control update form visibility
   selectedEmployee: any = null;
   showModal = false;
@@ -70,10 +70,18 @@ export class EmployeeComponent implements OnInit {
         employee_photo: ['']
       });
       
-
-      this.getEmployees();
+      this.getEmployees(); // Fetch employees on init
     }
   }
+
+    // Add the formatDate method here
+    formatDate(dateString: string): string {
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0]; // Convert to YYYY-MM-DD format
+      }
+      return ''; // Return empty string if the date is invalid
+    }
 
   getEmployees() {
     this.apollo
@@ -112,59 +120,88 @@ export class EmployeeComponent implements OnInit {
   }
 
   // Add new employee
-  onAddEmployee() {
-    if (this.employeeForm.invalid) return;
+// Add new employee
+onAddEmployee() {
+  if (this.employeeForm.invalid) return;
 
-    const { first_name, last_name, email, gender, designation, salary, date_of_joining, department, employee_photo } = this.employeeForm.value;
+  const {
+    first_name,
+    last_name,
+    email,
+    gender,
+    designation,
+    salary,
+    date_of_joining,
+    department,
+    employee_photo
+  } = this.employeeForm.value;
 
-    this.apollo
-      .mutate({
-        mutation: gql`
-          mutation AddEmployee($input: EmployeeInput!) {
-            addEmployee(input: $input) {
-              first_name
-              last_name
-              email
-              gender
-              designation
-              salary
-              date_of_joining
-              department
-              employee_photo
-              created_at
-              updated_at
-            }
-          }
-        `,
-        variables: {
-          input: {
-            first_name,
-            last_name,
-            email,
-            gender,
-            designation,
-            salary,
-            date_of_joining,  // Include date_of_joining in mutation
-            department,
+  const formattedDate = this.formatDate(date_of_joining); // Ensure the date is properly formatted
+
+  this.apollo
+    .mutate({
+      mutation: gql`
+        mutation AddEmployee($input: EmployeeInput!) {
+          addEmployee(input: $input) {
+            first_name
+            last_name
+            email
+            gender
+            designation
+            salary
+            date_of_joining
+            department
             employee_photo
+            created_at
+            updated_at
           }
         }
-      })
-      .subscribe({
-        next: (res: any) => {
-          this.getEmployees();
-          this.showAddEmployeeForm = false;
-        },
-        error: (err) => {
-          this.errorMessage = err?.message || 'An unknown error occurred!';
+      `,
+      variables: {
+        input: {
+          first_name,
+          last_name,
+          email,
+          gender,
+          designation,
+          salary,
+          date_of_joining: formattedDate,  // Use formatted date
+          department,
+          employee_photo
         }
-      });
-  }
-
+      },
+      refetchQueries: [{ query: gql`query { getEmployees { _id first_name last_name email gender designation salary date_of_joining department employee_photo } }` }]
+    })
+    .subscribe({
+      next: (res: any) => {
+        this.showAddEmployeeForm = false;
+      },
+      error: (err) => {
+        this.errorMessage = err?.message || 'An unknown error occurred!';
+      }
+    });
+}
   // Edit employee details, show update form
   onEditEmployee(employee: any) {
-    this.selectedEmployee = { ...employee };  // Store the employee's data to `selectedEmployee`
-    // Patch the form with the employee data
+    console.log('Edit clicked:', employee);
+
+    // Clone the employee object to prevent modifying the original data
+    this.selectedEmployee = { ...employee };
+
+    // Convert the timestamp to a Date object if it's a valid number
+    let formattedDate = '';
+    const date = new Date(parseInt(employee.date_of_joining, 10));  // Ensure it's a number
+
+    // Check if the date is valid
+    if (!isNaN(date.getTime())) {
+      formattedDate = date.toISOString().split('T')[0];  // Format the date as yyyy-mm-dd
+    } else {
+      console.warn('Invalid date_of_joining:', employee.date_of_joining);
+      formattedDate = '';  // Set to empty string if invalid
+    }
+
+
+    // Patch the form with employee details, including the correctly formatted date
     this.updateEmployeeForm.patchValue({
       first_name: employee.first_name,
       last_name: employee.last_name,
@@ -174,30 +211,30 @@ export class EmployeeComponent implements OnInit {
       salary: employee.salary,
       department: employee.department,
       employee_photo: employee.employee_photo,
-      date_of_joining: employee.date_of_joining
+      date_of_joining: formattedDate  // Will be empty string if invalid
     });
-  
-    // Show the update form and hide the add form
+
+    // Show update form and hide add form
     this.showAddEmployeeForm = false;
     this.showUpdateEmployeeForm = true;
   }
-  
-
   // Update employee details
   onUpdateEmployee() {
     if (this.updateEmployeeForm.invalid) return;
   
     const {
-      updated_first_name,
-      updated_last_name,
-      updated_email,
-      updated_gender,
-      updated_designation,
-      updated_salary,
-      updated_date_of_joining,
-      updated_department,
-      updated_employee_photo,
+      first_name,
+      last_name,
+      email,
+      gender,
+      designation,
+      salary,
+      date_of_joining,
+      department,
+      employee_photo
     } = this.updateEmployeeForm.value;
+  
+    const formattedDate = this.formatDate(date_of_joining);
   
     this.apollo
       .mutate({
@@ -221,23 +258,42 @@ export class EmployeeComponent implements OnInit {
         variables: {
           eid: this.selectedEmployee._id,
           input: {
-            first_name: updated_first_name,
-            last_name: updated_last_name,
-            email: updated_email,
-            gender: updated_gender,
-            designation: updated_designation,
-            salary: updated_salary,
-            date_of_joining: updated_date_of_joining,
-            department: updated_department,
-            employee_photo: updated_employee_photo,
+            first_name,
+            last_name,
+            email,
+            gender,
+            designation,
+            salary,
+            date_of_joining: formattedDate,
+            department,
+            employee_photo
           }
-        }
+        },
+        refetchQueries: [{
+          query: gql`
+            query {
+              getEmployees {
+                _id
+                first_name
+                last_name
+                email
+                gender
+                designation
+                salary
+                date_of_joining
+                department
+                employee_photo
+              }
+            }
+          `
+        }]
       })
       .subscribe({
         next: (res: any) => {
-          this.getEmployees(); // Refresh the employee list
-          this.showUpdateEmployeeForm = false; // Hide the form
-          this.selectedEmployee = null; // Deselect the employee
+          this.selectedEmployee = res.data.updateEmployee;
+          this.updateEmployeeForm.reset();
+          this.showUpdateEmployeeForm = false;
+          this.showModal = true; // to show updated employee in view
         },
         error: (err) => {
           this.errorMessage = err?.message || 'An unknown error occurred!';
@@ -245,7 +301,6 @@ export class EmployeeComponent implements OnInit {
       });
   }
   
-
   // Cancel editing and hide the update form
   cancelEditEmployee() {
     this.selectedEmployee = null;
@@ -266,35 +321,38 @@ export class EmployeeComponent implements OnInit {
   }
 
   // Delete employee
-  onDeleteEmployee(employeeId: string) {
-    if (confirm('Are you sure you want to delete this employee?')) {
-      this.apollo
-        .mutate({
-          mutation: gql`
-            mutation DeleteEmployee($eid: ID!) {
-              deleteEmployee(eid: $eid) {
-                message
-                success
-              }
+// Delete employee
+onDeleteEmployee(employeeId: string) {
+  if (confirm('Are you sure you want to delete this employee?')) {
+    this.apollo
+      .mutate({
+        mutation: gql`
+          mutation DeleteEmployee($eid: ID!) {
+            deleteEmployee(eid: $eid) {
+              message
+              success
             }
-          `,
-          variables: { eid: employeeId }
-        })
-        .subscribe({
-          next: (res: any) => {
-            if (res.data.deleteEmployee.success) {
-              this.getEmployees(); // Refresh the list
-            } else {
-              this.errorMessage = res.data.deleteEmployee.message;
-            }
-          },
-          error: (err) => {
-            this.errorMessage = err?.message || 'An unknown error occurred!';
           }
-        });
-    }
+        `,
+        variables: { eid: employeeId },
+        refetchQueries: [{ query: gql`query { getEmployees { _id first_name last_name email gender designation salary date_of_joining department employee_photo } }` }] // Refetch employee data after deletion
+      })
+      .subscribe({
+        next: (res: any) => {
+          if (res.data.deleteEmployee.success) {
+            // Optionally, you can display a success message or show a notification
+            this.getEmployees(); // Refresh the list of employees
+          } else {
+            this.errorMessage = res.data.deleteEmployee.message;
+          }
+        },
+        error: (err) => {
+          this.errorMessage = err?.message || 'An unknown error occurred!';
+        }
+      });
   }
-  
+}
+
 
   // Logout method
   onLogout(): void {

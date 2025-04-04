@@ -10,6 +10,7 @@ export const authGuard: CanActivateFn = (route, state) => {
   const isLoggedIn = authService.isAuthenticated();  // Check if authenticated using AuthService
 
   if (!isLoggedIn) {
+    alert('You must login before accessing Employee page');
     // Redirect to login if not logged in
     router.navigate(['/login']);
     return false;
