@@ -1,109 +1,141 @@
-<div class="container">
-    <!-- Check if the user is logged in -->
-    <ng-container *ngIf="authService.isAuthenticated(); else loginMessage">
-      
-      <!-- Add Employee Button -->
-      <button class="btn btn-primary" (click)="toggleAddEmployeeForm()">
-        Add Employee
-      </button>
-      
-      <!-- Log Out Button -->
-      <button class="btn btn-danger ml-2" (click)="onLogout()">Log Out</button>
-    
-      <!-- Add Employee Form -->
-      <div *ngIf="showAddEmployeeForm">
-        <form [formGroup]="employeeForm" (ngSubmit)="onAddEmployee()">
-          <!-- Form fields -->
-          <div class="form-group">
-            <label for="first_name">First Name</label>
-            <input id="first_name" formControlName="first_name" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="last_name">Last Name</label>
-            <input id="last_name" formControlName="last_name" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input id="email" formControlName="email" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="gender">Gender</label>
-            <input id="gender" formControlName="gender" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="designation">Designation</label>
-            <input id="designation" formControlName="designation" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="salary">Salary</label>
-            <input id="salary" formControlName="salary" type="number" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="department">Department</label>
-            <input id="department" formControlName="department" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="employee_photo">Profile Picture</label>
-            <input id="employee_photo" formControlName="employee_photo" type="file" class="form-control" />
-          </div>
-          <button type="submit" class="btn btn-success">Add Employee</button>
-        </form>
+<div *ngIf="!isLoggedIn" class="alert alert-warning">
+    <p>{{ errorMessage }}</p>
+  </div>
+  
+  <div *ngIf="isLoggedIn">
+    <div class="container mt-5">
+      <!-- Add/Update Employee Form -->
+      <div class="mb-4">
+        <button (click)="toggleAddEmployeeForm()" class="btn btn-primary">
+          Add Employee
+        </button>
       </div>
-    
-      <!-- Employee Table -->
-      <table class="table mt-4">
-        <thead>
-          <tr>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>ID</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let employee of employees">
-            <td>{{ employee.first_name }}</td>
-            <td>{{ employee.last_name }}</td>
-            <td>{{ employee._id }}</td>
-            <td>
-              <button class="btn btn-info" (click)="onViewEmployee(employee)">View</button>
-              <button class="btn btn-warning" (click)="onEditEmployee(employee)">Update</button>
-              <button class="btn btn-danger" (click)="onDeleteEmployee(employee._id)">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    
-      <!-- Employee Details Modal -->
-      <div *ngIf="showModal" class="modal" tabindex="-1" role="dialog">
+  
+      <div *ngIf="showAddEmployeeForm" class="card">
+        <div class="card-body">
+          <h5 class="card-title" *ngIf="!selectedEmployee">Add New Employee</h5>
+          <h5 class="card-title" *ngIf="selectedEmployee">Edit Employee</h5>
+  
+          <form [formGroup]="employeeForm" (ngSubmit)="onAddEmployee()">
+            <div class="form-group">
+              <label for="first_name">First Name</label>
+              <input type="text" id="first_name" formControlName="first_name" class="form-control" />
+            </div>
+  
+            <div class="form-group">
+              <label for="last_name">Last Name</label>
+              <input type="text" id="last_name" formControlName="last_name" class="form-control" />
+            </div>
+  
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" id="email" formControlName="email" class="form-control" />
+            </div>
+  
+            <div class="form-group">
+              <label for="gender">Gender</label>
+              <select id="gender" formControlName="gender" class="form-control">
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+  
+            <div class="form-group">
+              <label for="designation">Designation</label>
+              <input type="text" id="designation" formControlName="designation" class="form-control" />
+            </div>
+  
+            <div class="form-group">
+              <label for="salary">Salary</label>
+              <input type="number" id="salary" formControlName="salary" class="form-control" />
+            </div>
+  
+            <div class="form-group">
+              <label for="department">Department</label>
+              <input type="text" id="department" formControlName="department" class="form-control" />
+            </div>
+  
+            <div class="form-group">
+              <label for="employee_photo">Employee Photo</label>
+              <input type="file" id="employee_photo" formControlName="employee_photo" class="form-control" />
+            </div>
+  
+            <button type="submit" class="btn btn-success" [disabled]="employeeForm.invalid">
+              Save
+            </button>
+  
+            <button type="button" class="btn btn-secondary" (click)="cancelEditEmployee()">Cancel</button>
+          </form>
+        </div>
+      </div>
+  
+      <!-- Employee List Table -->
+      <div class="mt-4">
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>First Name</th>
+              <th>Last Name</th>
+              <th>Email</th>
+              <th>Gender</th>
+              <th>Designation</th>
+              <th>Salary</th>
+              <th>Department</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let employee of employees">
+              <td>{{ employee.first_name }}</td>
+              <td>{{ employee.last_name }}</td>
+              <td>{{ employee.email }}</td>
+              <td>{{ employee.gender }}</td>
+              <td>{{ employee.designation }}</td>
+              <td>{{ employee.salary | currency }}</td>
+              <td>{{ employee.department }}</td>
+              <td>
+                <button (click)="onViewEmployee(employee)" class="btn btn-info btn-sm">View</button>
+                <button (click)="onEditEmployee(employee)" class="btn btn-warning btn-sm">Edit</button>
+                <button (click)="onDeleteEmployee(employee._id)" class="btn btn-danger btn-sm">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      <!-- Employee Modal -->
+      <div *ngIf="showModal" class="modal show" tabindex="-1" role="dialog" style="display: block;">
         <div class="modal-dialog" role="document">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">Employee Details</h5>
-              <button type="button" class="close" (click)="closeModal()">
-                <span>&times;</span>
+              <button type="button" class="close" (click)="closeModal()" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
               </button>
             </div>
             <div class="modal-body">
-              <p><strong>First Name:</strong> {{ selectedEmployee?.first_name }}</p>
-              <p><strong>Last Name:</strong> {{ selectedEmployee?.last_name }}</p>
-              <p><strong>Email:</strong> {{ selectedEmployee?.email }}</p>
-              <p><strong>Gender:</strong> {{ selectedEmployee?.gender }}</p>
-              <p><strong>Designation:</strong> {{ selectedEmployee?.designation }}</p>
-              <p><strong>Salary:</strong> {{ selectedEmployee?.salary }}</p>
-              <p><strong>Department:</strong> {{ selectedEmployee?.department }}</p>
+              <p><strong>First Name:</strong> {{ selectedEmployee.first_name }}</p>
+              <p><strong>Last Name:</strong> {{ selectedEmployee.last_name }}</p>
+              <p><strong>Email:</strong> {{ selectedEmployee.email }}</p>
+              <p><strong>Gender:</strong> {{ selectedEmployee.gender }}</p>
+              <p><strong>Designation:</strong> {{ selectedEmployee.designation }}</p>
+              <p><strong>Salary:</strong> {{ selectedEmployee.salary | currency }}</p>
+              <p><strong>Department:</strong> {{ selectedEmployee.department }}</p>
+              <p><strong>Photo:</strong> <img *ngIf="selectedEmployee.employee_photo" [src]="selectedEmployee.employee_photo" alt="Employee Photo" width="100"></p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
             </div>
           </div>
         </div>
       </div>
+    </div>
   
-    </ng-container>
-  
-    <!-- Show message if not logged in -->
-    <ng-template #loginMessage>
-      <div class="alert alert-warning">
-        You need to be logged in to access this section. Please <a routerLink="/login">login</a>.
-      </div>
-    </ng-template>
+    <!-- Logout Button -->
+    <div class="mt-4">
+      <button (click)="onLogout()" class="btn btn-danger">Logout</button>
+    </div>
   </div>
   

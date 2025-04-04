@@ -5,8 +5,8 @@ import { Router } from '@angular/router';
 import { gql } from 'graphql-tag';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
-import { AuthService } from '../services/auth.service'; // Import AuthService
-import { ActivatedRoute } from '@angular/router';  // Import ActivatedRoute for passing messages
+import { AuthService } from '../services/auth.service';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-employee',
@@ -18,33 +18,34 @@ import { ActivatedRoute } from '@angular/router';  // Import ActivatedRoute for 
 
 export class EmployeeComponent implements OnInit {
   employeeForm!: FormGroup;
+  updateEmployeeForm!: FormGroup; // New form for updating employee
   employees: any[] = [];
   errorMessage: string | null = null;
 
   showAddEmployeeForm = false;
+  showUpdateEmployeeForm = false; // Flag to control update form visibility
   selectedEmployee: any = null;
   showModal = false;
-  isLoggedIn = false;  // Flag to check if user is logged in
+  isLoggedIn = false;
 
   constructor(
     private apollo: Apollo,
     private fb: FormBuilder,
     private router: Router,
-    public authService: AuthService, // Change from private to public
-    private activatedRoute: ActivatedRoute // Inject ActivatedRoute
+    public authService: AuthService,
+    private activatedRoute: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    // Check if user is authenticated
-    this.isLoggedIn = this.authService.isAuthenticated(); 
-    
+    this.isLoggedIn = this.authService.isAuthenticated();
+
     if (!this.isLoggedIn) {
       this.activatedRoute.queryParams.subscribe(params => {
         this.errorMessage = params['message'] || 'You need to log in first!';
       });
-      this.router.navigate(['/login']);  // Redirect to login page if not logged in
+      this.router.navigate(['/login']);
     } else {
-      // Initialize form and fetch employees if authenticated
+      // Initialize form groups
       this.employeeForm = this.fb.group({
         first_name: ['', Validators.required],
         last_name: ['', Validators.required],
@@ -56,11 +57,21 @@ export class EmployeeComponent implements OnInit {
         employee_photo: ['']
       });
 
-      this.getEmployees(); // Fetch employees after authentication check
+      this.updateEmployeeForm = this.fb.group({
+        updated_first_name: ['', Validators.required],
+        updated_last_name: ['', Validators.required],
+        updated_email: ['', [Validators.required, Validators.email]],
+        updated_gender: ['', Validators.required],
+        updated_designation: ['', Validators.required],
+        updated_salary: ['', [Validators.required, Validators.min(0)]],
+        updated_department: ['', Validators.required],
+        updated_employee_photo: ['']
+      });
+
+      this.getEmployees();
     }
   }
 
-  // Fetch employees
   getEmployees() {
     this.apollo
       .watchQuery({
@@ -86,9 +97,14 @@ export class EmployeeComponent implements OnInit {
         },
         error: (err) => {
           this.errorMessage = err?.message || 'An unknown error occurred!';
-          console.error('Error fetching employees:', err);
         }
       });
+  }
+
+  // Toggle Add Employee Form
+  toggleAddEmployeeForm() {
+    this.showAddEmployeeForm = !this.showAddEmployeeForm;
+    this.showUpdateEmployeeForm = false; // Hide update form when showing add form
   }
 
   // Add new employee
@@ -131,49 +147,88 @@ export class EmployeeComponent implements OnInit {
       })
       .subscribe({
         next: (res: any) => {
-          console.log('Employee added successfully', res);
-          this.getEmployees(); // Refresh the list of employees
-          this.showAddEmployeeForm = false; // Hide the form after successful add
+          this.getEmployees();
+          this.showAddEmployeeForm = false;
         },
         error: (err) => {
           this.errorMessage = err?.message || 'An unknown error occurred!';
-          console.error('Error during employee addition:', err);
         }
       });
   }
 
-  // Edit employee details
+  // Edit employee details, show update form
   onEditEmployee(employee: any) {
     this.selectedEmployee = { ...employee };
-    this.showModal = true;
+    this.updateEmployeeForm.patchValue({
+      updated_first_name: employee.first_name,
+      updated_last_name: employee.last_name,
+      updated_email: employee.email,
+      updated_gender: employee.gender,
+      updated_designation: employee.designation,
+      updated_salary: employee.salary,
+      updated_department: employee.department,
+      updated_employee_photo: employee.employee_photo
+    });
+
+    this.showAddEmployeeForm = false;
+    this.showUpdateEmployeeForm = true; // Show update form
   }
 
-  // Delete employee
-  onDeleteEmployee(eid: string) {
-    if (confirm('Are you sure you want to delete this employee?')) {
-      this.apollo
-        .mutate({
-          mutation: gql`
-            mutation DeleteEmployee($eid: ID!) {
-              deleteEmployee(eid: $eid) {
-                message
-                success
-              }
+  // Cancel editing and hide the update form
+  cancelEditEmployee() {
+    this.selectedEmployee = null;
+    this.updateEmployeeForm.reset();
+    this.showUpdateEmployeeForm = false; // Hide update form
+  }
+
+  // Update employee details
+  onUpdateEmployee() {
+    if (this.updateEmployeeForm.invalid) return;
+
+    const { updated_first_name, updated_last_name, updated_email, updated_gender, updated_designation, updated_salary, updated_department, updated_employee_photo } = this.updateEmployeeForm.value;
+
+    this.apollo
+      .mutate({
+        mutation: gql`
+          mutation UpdateEmployee($eid: ID!, $input: EmployeeInput!) {
+            updateEmployee(eid: $eid, input: $input) {
+              _id
+              first_name
+              last_name
+              email
+              gender
+              designation
+              salary
+              department
+              employee_photo
+              updated_at
             }
-          `,
-          variables: { eid }
-        })
-        .subscribe({
-          next: (res: any) => {
-            console.log(res.data.deleteEmployee.message);
-            this.getEmployees(); // Refresh employees list
-          },
-          error: (err) => {
-            this.errorMessage = err?.message || 'An unknown error occurred!';
-            console.error('Error during employee deletion:', err);
           }
-        });
-    }
+        `,
+        variables: {
+          eid: this.selectedEmployee._id,
+          input: {
+            first_name: updated_first_name,
+            last_name: updated_last_name,
+            email: updated_email,
+            gender: updated_gender,
+            designation: updated_designation,
+            salary: updated_salary,
+            department: updated_department,
+            employee_photo: updated_employee_photo
+          }
+        }
+      })
+      .subscribe({
+        next: (res: any) => {
+          this.getEmployees();
+          this.showUpdateEmployeeForm = false;
+          this.selectedEmployee = null;
+        },
+        error: (err) => {
+          this.errorMessage = err?.message || 'An unknown error occurred!';
+        }
+      });
   }
 
   // View employee details
@@ -184,18 +239,38 @@ export class EmployeeComponent implements OnInit {
 
   // Close modal
   closeModal() {
-    this.showModal = false;
     this.selectedEmployee = null;
+    this.showModal = false;
   }
 
-  // Toggle add employee form
-  toggleAddEmployeeForm() {
-    this.showAddEmployeeForm = !this.showAddEmployeeForm;
+  // Delete employee
+  onDeleteEmployee(employeeId: string) {
+    if (confirm('Are you sure you want to delete this employee?')) {
+      this.apollo
+        .mutate({
+          mutation: gql`
+            mutation DeleteEmployee($eid: ID!) {
+              deleteEmployee(eid: $eid) {
+                _id
+              }
+            }
+          `,
+          variables: { eid: employeeId }
+        })
+        .subscribe({
+          next: (res: any) => {
+            this.getEmployees();
+          },
+          error: (err) => {
+            this.errorMessage = err?.message || 'An unknown error occurred!';
+          }
+        });
+    }
   }
 
   // Logout method
   onLogout(): void {
-    this.authService.clearToken(); // Clear the authentication token
-    this.router.navigate(['/login']); // Redirect to login page
+    this.authService.clearToken();
+    this.router.navigate(['/login']);
   }
 }
