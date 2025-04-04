@@ -1,1 +1,110 @@
-<p>employee works!</p>
+<div class="container">
+    <!-- Check if the user is logged in -->
+    <ng-container *ngIf="authService.isAuthenticated(); else loginMessage">
+      
+      <!-- Add Employee Button -->
+      <button class="btn btn-primary" (click)="toggleAddEmployeeForm()">
+        Add Employee
+      </button>
+    
+      <!-- Add Employee Form -->
+      <div *ngIf="showAddEmployeeForm">
+        <form [formGroup]="employeeForm" (ngSubmit)="onAddEmployee()">
+          <!-- Form fields -->
+          <div class="form-group">
+            <label for="first_name">First Name</label>
+            <input id="first_name" formControlName="first_name" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="last_name">Last Name</label>
+            <input id="last_name" formControlName="last_name" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input id="email" formControlName="email" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="gender">Gender</label>
+            <input id="gender" formControlName="gender" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="designation">Designation</label>
+            <input id="designation" formControlName="designation" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="salary">Salary</label>
+            <input id="salary" formControlName="salary" type="number" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="date_of_joining">Date of Joining</label>
+            <input id="date_of_joining" formControlName="date_of_joining" type="date" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="department">Department</label>
+            <input id="department" formControlName="department" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="employee_photo">Profile Picture</label>
+            <input id="employee_photo" formControlName="employee_photo" type="file" class="form-control" />
+          </div>
+          <button type="submit" class="btn btn-success">Add Employee</button>
+        </form>
+      </div>
+    
+      <!-- Employee Table -->
+      <table class="table mt-4">
+        <thead>
+          <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>ID</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let employee of employees">
+            <td>{{ employee.first_name }}</td>
+            <td>{{ employee.last_name }}</td>
+            <td>{{ employee._id }}</td>
+            <td>
+              <button class="btn btn-info" (click)="onViewEmployee(employee)">View</button>
+              <button class="btn btn-warning" (click)="onEditEmployee(employee)">Update</button>
+              <button class="btn btn-danger" (click)="onDeleteEmployee(employee._id)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    
+      <!-- Employee Details Modal -->
+      <div *ngIf="showModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Employee Details</h5>
+              <button type="button" class="close" (click)="closeModal()">
+                <span>&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p><strong>First Name:</strong> {{ selectedEmployee?.first_name }}</p>
+              <p><strong>Last Name:</strong> {{ selectedEmployee?.last_name }}</p>
+              <p><strong>Email:</strong> {{ selectedEmployee?.email }}</p>
+              <p><strong>Gender:</strong> {{ selectedEmployee?.gender }}</p>
+              <p><strong>Designation:</strong> {{ selectedEmployee?.designation }}</p>
+              <p><strong>Salary:</strong> {{ selectedEmployee?.salary }}</p>
+              <p><strong>Department:</strong> {{ selectedEmployee?.department }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+    </ng-container>
+  
+    <!-- Show message if not logged in -->
+    <ng-template #loginMessage>
+      <div class="alert alert-warning">
+        You need to be logged in to access this section. Please <a routerLink="/login">login</a>.
+      </div>
+    </ng-template>
+  </div>
+  
