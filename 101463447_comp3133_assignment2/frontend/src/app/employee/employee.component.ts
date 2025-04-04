@@ -6,6 +6,7 @@ import { gql } from 'graphql-tag';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../services/auth.service'; // Import AuthService
+import { ActivatedRoute } from '@angular/router';  // Import ActivatedRoute for passing messages
 
 @Component({
   selector: 'app-employee',
@@ -29,7 +30,8 @@ export class EmployeeComponent implements OnInit {
     private apollo: Apollo,
     private fb: FormBuilder,
     private router: Router,
-    public authService: AuthService // Change from private to public
+    public authService: AuthService, // Change from private to public
+    private activatedRoute: ActivatedRoute // Inject ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -37,6 +39,9 @@ export class EmployeeComponent implements OnInit {
     this.isLoggedIn = this.authService.isAuthenticated(); 
     
     if (!this.isLoggedIn) {
+      this.activatedRoute.queryParams.subscribe(params => {
+        this.errorMessage = params['message'] || 'You need to log in first!';
+      });
       this.router.navigate(['/login']);  // Redirect to login page if not logged in
     } else {
       // Initialize form and fetch employees if authenticated
@@ -187,5 +192,10 @@ export class EmployeeComponent implements OnInit {
   toggleAddEmployeeForm() {
     this.showAddEmployeeForm = !this.showAddEmployeeForm;
   }
-}
 
+  // Logout method
+  onLogout(): void {
+    this.authService.clearToken(); // Clear the authentication token
+    this.router.navigate(['/login']); // Redirect to login page
+  }
+}

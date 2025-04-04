@@ -6,6 +6,9 @@
       <button class="btn btn-primary" (click)="toggleAddEmployeeForm()">
         Add Employee
       </button>
+      
+      <!-- Log Out Button -->
+      <button class="btn btn-danger ml-2" (click)="onLogout()">Log Out</button>
     
       <!-- Add Employee Form -->
       <div *ngIf="showAddEmployeeForm">
@@ -34,10 +37,6 @@
           <div class="form-group">
             <label for="salary">Salary</label>
             <input id="salary" formControlName="salary" type="number" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="date_of_joining">Date of Joining</label>
-            <input id="date_of_joining" formControlName="date_of_joining" type="date" class="form-control" />
           </div>
           <div class="form-group">
             <label for="department">Department</label>
