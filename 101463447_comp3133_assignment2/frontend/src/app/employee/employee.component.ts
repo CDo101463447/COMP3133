@@ -53,20 +53,23 @@ export class EmployeeComponent implements OnInit {
         gender: ['', Validators.required],
         designation: ['', Validators.required],
         salary: ['', [Validators.required, Validators.min(0)]],
+        date_of_joining: ['', Validators.required], // New field for date of joining
         department: ['', Validators.required],
         employee_photo: ['']
       });
 
       this.updateEmployeeForm = this.fb.group({
-        updated_first_name: ['', Validators.required],
-        updated_last_name: ['', Validators.required],
-        updated_email: ['', [Validators.required, Validators.email]],
-        updated_gender: ['', Validators.required],
-        updated_designation: ['', Validators.required],
-        updated_salary: ['', [Validators.required, Validators.min(0)]],
-        updated_department: ['', Validators.required],
-        updated_employee_photo: ['']
+        first_name: ['', Validators.required],
+        last_name: ['', Validators.required],
+        email: ['', [Validators.required, Validators.email]],
+        gender: ['', Validators.required],
+        designation: ['', Validators.required],
+        salary: ['', [Validators.required, Validators.min(0)]],
+        date_of_joining: ['', Validators.required],
+        department: ['', Validators.required],
+        employee_photo: ['']
       });
+      
 
       this.getEmployees();
     }
@@ -85,6 +88,7 @@ export class EmployeeComponent implements OnInit {
               gender
               designation
               salary
+              date_of_joining
               department
               employee_photo
             }
@@ -111,7 +115,7 @@ export class EmployeeComponent implements OnInit {
   onAddEmployee() {
     if (this.employeeForm.invalid) return;
 
-    const { first_name, last_name, email, gender, designation, salary, department, employee_photo } = this.employeeForm.value;
+    const { first_name, last_name, email, gender, designation, salary, date_of_joining, department, employee_photo } = this.employeeForm.value;
 
     this.apollo
       .mutate({
@@ -140,6 +144,7 @@ export class EmployeeComponent implements OnInit {
             gender,
             designation,
             salary,
+            date_of_joining,  // Include date_of_joining in mutation
             department,
             employee_photo
           }
@@ -158,35 +163,42 @@ export class EmployeeComponent implements OnInit {
 
   // Edit employee details, show update form
   onEditEmployee(employee: any) {
-    this.selectedEmployee = { ...employee };
+    this.selectedEmployee = { ...employee };  // Store the employee's data to `selectedEmployee`
+    // Patch the form with the employee data
     this.updateEmployeeForm.patchValue({
-      updated_first_name: employee.first_name,
-      updated_last_name: employee.last_name,
-      updated_email: employee.email,
-      updated_gender: employee.gender,
-      updated_designation: employee.designation,
-      updated_salary: employee.salary,
-      updated_department: employee.department,
-      updated_employee_photo: employee.employee_photo
+      first_name: employee.first_name,
+      last_name: employee.last_name,
+      email: employee.email,
+      gender: employee.gender,
+      designation: employee.designation,
+      salary: employee.salary,
+      department: employee.department,
+      employee_photo: employee.employee_photo,
+      date_of_joining: employee.date_of_joining
     });
-
+  
+    // Show the update form and hide the add form
     this.showAddEmployeeForm = false;
-    this.showUpdateEmployeeForm = true; // Show update form
+    this.showUpdateEmployeeForm = true;
   }
-
-  // Cancel editing and hide the update form
-  cancelEditEmployee() {
-    this.selectedEmployee = null;
-    this.updateEmployeeForm.reset();
-    this.showUpdateEmployeeForm = false; // Hide update form
-  }
+  
 
   // Update employee details
   onUpdateEmployee() {
     if (this.updateEmployeeForm.invalid) return;
-
-    const { updated_first_name, updated_last_name, updated_email, updated_gender, updated_designation, updated_salary, updated_department, updated_employee_photo } = this.updateEmployeeForm.value;
-
+  
+    const {
+      updated_first_name,
+      updated_last_name,
+      updated_email,
+      updated_gender,
+      updated_designation,
+      updated_salary,
+      updated_date_of_joining,
+      updated_department,
+      updated_employee_photo,
+    } = this.updateEmployeeForm.value;
+  
     this.apollo
       .mutate({
         mutation: gql`
@@ -199,6 +211,7 @@ export class EmployeeComponent implements OnInit {
               gender
               designation
               salary
+              date_of_joining
               department
               employee_photo
               updated_at
@@ -214,21 +227,30 @@ export class EmployeeComponent implements OnInit {
             gender: updated_gender,
             designation: updated_designation,
             salary: updated_salary,
+            date_of_joining: updated_date_of_joining,
             department: updated_department,
-            employee_photo: updated_employee_photo
+            employee_photo: updated_employee_photo,
           }
         }
       })
       .subscribe({
         next: (res: any) => {
-          this.getEmployees();
-          this.showUpdateEmployeeForm = false;
-          this.selectedEmployee = null;
+          this.getEmployees(); // Refresh the employee list
+          this.showUpdateEmployeeForm = false; // Hide the form
+          this.selectedEmployee = null; // Deselect the employee
         },
         error: (err) => {
           this.errorMessage = err?.message || 'An unknown error occurred!';
         }
       });
+  }
+  
+
+  // Cancel editing and hide the update form
+  cancelEditEmployee() {
+    this.selectedEmployee = null;
+    this.updateEmployeeForm.reset();
+    this.showUpdateEmployeeForm = false; // Hide update form
   }
 
   // View employee details
@@ -251,7 +273,8 @@ export class EmployeeComponent implements OnInit {
           mutation: gql`
             mutation DeleteEmployee($eid: ID!) {
               deleteEmployee(eid: $eid) {
-                _id
+                message
+                success
               }
             }
           `,
@@ -259,7 +282,11 @@ export class EmployeeComponent implements OnInit {
         })
         .subscribe({
           next: (res: any) => {
-            this.getEmployees();
+            if (res.data.deleteEmployee.success) {
+              this.getEmployees(); // Refresh the list
+            } else {
+              this.errorMessage = res.data.deleteEmployee.message;
+            }
           },
           error: (err) => {
             this.errorMessage = err?.message || 'An unknown error occurred!';
@@ -267,6 +294,7 @@ export class EmployeeComponent implements OnInit {
         });
     }
   }
+  
 
   // Logout method
   onLogout(): void {
