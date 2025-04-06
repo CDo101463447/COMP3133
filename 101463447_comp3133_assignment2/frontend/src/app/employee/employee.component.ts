@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Apollo } from 'apollo-angular';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -18,12 +18,14 @@ import { ActivatedRoute } from '@angular/router';
 
 export class EmployeeComponent implements OnInit {
   employeeForm!: FormGroup;
-  updateEmployeeForm!: FormGroup; // New form for updating employee
+  updateEmployeeForm!: FormGroup;
+  searchForm!: FormGroup;  // New form for search
   employees: any[] = [];
+  filteredEmployees: any[] = [];  // Holds filtered employees
   errorMessage: string | null = null;
 
   showAddEmployeeForm: boolean = false;
-  showUpdateEmployeeForm = false; // Flag to control update form visibility
+  showUpdateEmployeeForm = false;
   selectedEmployee: any = null;
   showModal = false;
   isLoggedIn = false;
@@ -33,7 +35,8 @@ export class EmployeeComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     public authService: AuthService,
-    private activatedRoute: ActivatedRoute
+    private activatedRoute: ActivatedRoute,
+    private cdRef: ChangeDetectorRef  // Inject ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -53,7 +56,7 @@ export class EmployeeComponent implements OnInit {
         gender: ['', Validators.required],
         designation: ['', Validators.required],
         salary: ['', [Validators.required, Validators.min(0)]],
-        date_of_joining: ['', Validators.required], // New field for date of joining
+        date_of_joining: ['', Validators.required],
         department: ['', Validators.required],
         employee_photo: ['']
       });
@@ -69,19 +72,23 @@ export class EmployeeComponent implements OnInit {
         department: ['', Validators.required],
         employee_photo: ['']
       });
-      
+
+      this.searchForm = this.fb.group({
+        department: [''],
+        designation: ['']
+      });
+
       this.getEmployees(); // Fetch employees on init
     }
   }
 
-    // Add the formatDate method here
-    formatDate(dateString: string): string {
-      const date = new Date(dateString);
-      if (!isNaN(date.getTime())) {
-        return date.toISOString().split('T')[0]; // Convert to YYYY-MM-DD format
-      }
-      return ''; // Return empty string if the date is invalid
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0]; // Convert to YYYY-MM-DD format
     }
+    return ''; // Return empty string if the date is invalid
+  }
 
   getEmployees() {
     this.apollo
@@ -106,6 +113,7 @@ export class EmployeeComponent implements OnInit {
       .valueChanges.subscribe({
         next: (result: any) => {
           this.employees = result.data.getEmployees;
+          this.filteredEmployees = this.employees; // Initialize with all employees
         },
         error: (err) => {
           this.errorMessage = err?.message || 'An unknown error occurred!';
@@ -113,95 +121,103 @@ export class EmployeeComponent implements OnInit {
       });
   }
 
-  // Toggle Add Employee Form
-  toggleAddEmployeeForm() {
-    this.showAddEmployeeForm = !this.showAddEmployeeForm;
-    this.showUpdateEmployeeForm = false; // Hide update form when showing add form
+  // Search for employees based on department and designation
+  onSearch() {
+    const { department, designation } = this.searchForm.value;
+
+    // Filter employees based on search criteria
+    this.filteredEmployees = this.employees.filter(employee => {
+      return (
+        (department ? employee.department.toLowerCase().includes(department.toLowerCase()) : true) &&
+        (designation ? employee.designation.toLowerCase().includes(designation.toLowerCase()) : true)
+      );
+    });
+
+    // Manually trigger change detection to update the UI
+    this.cdRef.detectChanges();
   }
 
-  // Add new employee
-// Add new employee
-onAddEmployee() {
-  if (this.employeeForm.invalid) return;
+  toggleAddEmployeeForm() {
+    this.showAddEmployeeForm = !this.showAddEmployeeForm;
+    this.showUpdateEmployeeForm = false;
+  }
 
-  const {
-    first_name,
-    last_name,
-    email,
-    gender,
-    designation,
-    salary,
-    date_of_joining,
-    department,
-    employee_photo
-  } = this.employeeForm.value;
+  onAddEmployee() {
+    if (this.employeeForm.invalid) return;
 
-  const formattedDate = this.formatDate(date_of_joining); // Ensure the date is properly formatted
+    const {
+      first_name,
+      last_name,
+      email,
+      gender,
+      designation,
+      salary,
+      date_of_joining,
+      department,
+      employee_photo
+    } = this.employeeForm.value;
 
-  this.apollo
-    .mutate({
-      mutation: gql`
-        mutation AddEmployee($input: EmployeeInput!) {
-          addEmployee(input: $input) {
-            first_name
-            last_name
-            email
-            gender
-            designation
-            salary
-            date_of_joining
-            department
-            employee_photo
-            created_at
-            updated_at
+    const formattedDate = this.formatDate(date_of_joining);
+
+    this.apollo
+      .mutate({
+        mutation: gql`
+          mutation AddEmployee($input: EmployeeInput!) {
+            addEmployee(input: $input) {
+              first_name
+              last_name
+              email
+              gender
+              designation
+              salary
+              date_of_joining
+              department
+              employee_photo
+              created_at
+              updated_at
+            }
           }
+        `,
+        variables: {
+          input: {
+            first_name,
+            last_name,
+            email,
+            gender,
+            designation,
+            salary,
+            date_of_joining: formattedDate,
+            department,
+            employee_photo
+          }
+        },
+        refetchQueries: [{ query: gql`query { getEmployees { _id first_name last_name email gender designation salary date_of_joining department employee_photo } }` }]
+      })
+      .subscribe({
+        next: (res: any) => {
+          this.showAddEmployeeForm = false;
+        },
+        error: (err) => {
+          this.errorMessage = err?.message || 'An unknown error occurred!';
         }
-      `,
-      variables: {
-        input: {
-          first_name,
-          last_name,
-          email,
-          gender,
-          designation,
-          salary,
-          date_of_joining: formattedDate,  // Use formatted date
-          department,
-          employee_photo
-        }
-      },
-      refetchQueries: [{ query: gql`query { getEmployees { _id first_name last_name email gender designation salary date_of_joining department employee_photo } }` }]
-    })
-    .subscribe({
-      next: (res: any) => {
-        this.showAddEmployeeForm = false;
-      },
-      error: (err) => {
-        this.errorMessage = err?.message || 'An unknown error occurred!';
-      }
-    });
-}
-  // Edit employee details, show update form
+      });
+  }
+
   onEditEmployee(employee: any) {
     console.log('Edit clicked:', employee);
 
-    // Clone the employee object to prevent modifying the original data
     this.selectedEmployee = { ...employee };
 
-    // Convert the timestamp to a Date object if it's a valid number
     let formattedDate = '';
-    const date = new Date(parseInt(employee.date_of_joining, 10));  // Ensure it's a number
+    const date = new Date(parseInt(employee.date_of_joining, 10));
 
-    // Check if the date is valid
     if (!isNaN(date.getTime())) {
-      formattedDate = date.toISOString().split('T')[0];  // Format the date as yyyy-mm-dd
+      formattedDate = date.toISOString().split('T')[0];
     } else {
       console.warn('Invalid date_of_joining:', employee.date_of_joining);
-      formattedDate = '';  // Set to empty string if invalid
+      formattedDate = '';
     }
 
-
-    // Patch the form with employee details, including the correctly formatted date
     this.updateEmployeeForm.patchValue({
       first_name: employee.first_name,
       last_name: employee.last_name,
@@ -211,17 +227,16 @@ onAddEmployee() {
       salary: employee.salary,
       department: employee.department,
       employee_photo: employee.employee_photo,
-      date_of_joining: formattedDate  // Will be empty string if invalid
+      date_of_joining: formattedDate
     });
 
-    // Show update form and hide add form
     this.showAddEmployeeForm = false;
     this.showUpdateEmployeeForm = true;
   }
-  // Update employee details
+
   onUpdateEmployee() {
     if (this.updateEmployeeForm.invalid) return;
-  
+
     const {
       first_name,
       last_name,
@@ -233,9 +248,9 @@ onAddEmployee() {
       department,
       employee_photo
     } = this.updateEmployeeForm.value;
-  
+
     const formattedDate = this.formatDate(date_of_joining);
-  
+
     this.apollo
       .mutate({
         mutation: gql`
@@ -293,68 +308,65 @@ onAddEmployee() {
           this.selectedEmployee = res.data.updateEmployee;
           this.updateEmployeeForm.reset();
           this.showUpdateEmployeeForm = false;
-          this.showModal = true; // to show updated employee in view
+          this.showModal = true;
         },
         error: (err) => {
           this.errorMessage = err?.message || 'An unknown error occurred!';
         }
       });
   }
-  
-  // Cancel editing and hide the update form
+
   cancelEditEmployee() {
     this.selectedEmployee = null;
     this.updateEmployeeForm.reset();
-    this.showUpdateEmployeeForm = false; // Hide update form
+    this.showUpdateEmployeeForm = false;
   }
 
-  // View employee details
   onViewEmployee(employee: any) {
     this.selectedEmployee = employee;
     this.showModal = true;
   }
 
-  // Close modal
   closeModal() {
     this.selectedEmployee = null;
     this.showModal = false;
   }
 
-  // Delete employee
-// Delete employee
-onDeleteEmployee(employeeId: string) {
-  if (confirm('Are you sure you want to delete this employee?')) {
-    this.apollo
-      .mutate({
-        mutation: gql`
-          mutation DeleteEmployee($eid: ID!) {
-            deleteEmployee(eid: $eid) {
-              message
-              success
+  onDeleteEmployee(employeeId: string) {
+    if (confirm('Are you sure you want to delete this employee?')) {
+      this.apollo
+        .mutate({
+          mutation: gql`
+            mutation DeleteEmployee($eid: ID!) {
+              deleteEmployee(eid: $eid) {
+                message
+                success
+              }
             }
+          `,
+          variables: { eid: employeeId },
+          refetchQueries: [{ query: gql`query { getEmployees { _id first_name last_name email gender designation salary date_of_joining department employee_photo } }` }]
+        })
+        .subscribe({
+          next: (res: any) => {
+            if (res.data.deleteEmployee.success) {
+              this.getEmployees();
+            } else {
+              this.errorMessage = res.data.deleteEmployee.message;
+            }
+          },
+          error: (err) => {
+            this.errorMessage = err?.message || 'An unknown error occurred!';
           }
-        `,
-        variables: { eid: employeeId },
-        refetchQueries: [{ query: gql`query { getEmployees { _id first_name last_name email gender designation salary date_of_joining department employee_photo } }` }] // Refetch employee data after deletion
-      })
-      .subscribe({
-        next: (res: any) => {
-          if (res.data.deleteEmployee.success) {
-            // Optionally, you can display a success message or show a notification
-            this.getEmployees(); // Refresh the list of employees
-          } else {
-            this.errorMessage = res.data.deleteEmployee.message;
-          }
-        },
-        error: (err) => {
-          this.errorMessage = err?.message || 'An unknown error occurred!';
-        }
-      });
+        });
+    }
   }
-}
 
+  onClearSearch() {
+    this.searchForm.reset();
+    this.getEmployees(); // Adjust this method to fetch the full list of employees without the search filters
+  }
 
-  // Logout method
   onLogout(): void {
     this.authService.clearToken();
     this.router.navigate(['/login']);

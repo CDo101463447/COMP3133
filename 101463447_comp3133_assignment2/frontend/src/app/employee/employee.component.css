@@ -12,7 +12,7 @@
   }
   
   button {
-    margin: 10px 0;
+    margin: 2px 0;
   }
   
   /* Add Employee Form Styles */
@@ -39,11 +39,12 @@
   }
   
   .btn {
-    width: 100%;
+    width: 20%;
     padding: 12px;
     font-size: 16px;
     border-radius: 4px;
     cursor: pointer;
+    margin-right: 10px;
   }
   
   .btn-primary {
@@ -142,6 +143,11 @@
     margin: 10px 0;
   }
   
+  .search-input {
+    width: 150px; /* Adjust the width to make them shorter */
+    display: inline-block;
+    margin-right: 10px; /* Space between the input fields */
+}
   /* Responsive Styles */
   @media (max-width: 768px) {
     .container {

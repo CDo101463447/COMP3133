@@ -15,7 +15,6 @@
     <div *ngIf="showAddEmployeeForm && !selectedEmployee" class="card">
       <div class="card-body">
         <h5 class="card-title">Add New Employee</h5>
-
         <form [formGroup]="employeeForm" (ngSubmit)="onAddEmployee()">
           <div class="form-group">
             <label for="first_name">First Name</label>
@@ -80,7 +79,6 @@
     <div *ngIf="selectedEmployee" class="card">
       <div class="card-body">
         <h5 class="card-title">Edit Employee</h5>
-
         <form [formGroup]="updateEmployeeForm" (ngSubmit)="onUpdateEmployee()">
           <div class="form-group">
             <label for="first_name">First Name</label>
@@ -141,6 +139,28 @@
       </div>
     </div>
 
+    <!-- Search form with inputs for department and designation -->
+    <div class="container mt-5">
+        <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
+          <div class="mb-4">
+            <input 
+              type="text" 
+              formControlName="department" 
+              class="form-control search-input" 
+              placeholder="Search by Department" 
+            />
+            <input 
+              type="text" 
+              formControlName="designation" 
+              class="form-control search-input" 
+              placeholder="Search by Designation" 
+            />
+            <button type="submit" class="btn btn-primary mt-3">Search</button>
+            <button type="button" class="btn btn-secondary mt-3" (click)="onClearSearch()">Clear</button>
+          </div>
+        </form>
+    </div>
+
     <!-- Employee List Table -->
     <div class="mt-4">
       <table class="table table-bordered">
@@ -148,12 +168,12 @@
           <tr>
             <th>First Name</th>
             <th>Last Name</th>
-            <th>id</th>
+            <th>ID</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let employee of employees">
+          <tr *ngFor="let employee of filteredEmployees">
             <td>{{ employee.first_name }}</td>
             <td>{{ employee.last_name }}</td>
             <td>{{ employee._id }}</td>
