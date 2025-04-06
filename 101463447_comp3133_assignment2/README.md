@@ -1,6 +1,6 @@
 # Full-Stack Employee Management System
 
-This project consists of a backend built with **Node.js** (Express) and a frontend developed using **React**. The system allows you to manage employee data, including adding, updating, and displaying employee details.
+This project consists of a **Node.js** backend with **GraphQL** and an **Angular** frontend. It allows users to manage employee data such as adding, updating, and displaying employee details.
 
 ## Table of Contents
 1. [Backend Setup](#backend-setup)
